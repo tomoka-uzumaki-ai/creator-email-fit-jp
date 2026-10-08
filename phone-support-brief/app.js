@@ -1,0 +1,1 @@
+const $=id=>document.getElementById(id);function saveText(name,text,type='text/plain;charset=utf-8'){const u=URL.createObjectURL(new Blob([text],{type}));const a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}function clearResult(){if($('result'))$('result').hidden=true;if($('buy'))$('buy').hidden=true}
