@@ -15,7 +15,7 @@ function classify(r,topic){if(!['story','notes'].includes(topic))fail('確認す
  if(r.permission==='unknown')reasons.push('permission_unknown');if(r.withdrawn==='unknown')reasons.push('withdrawn_unknown');if(r.topics==='unknown')reasons.push('topics_unknown');if(reasons.length)return {classification:'unknown',reasons};
  if(!r.topics.split('|').includes(topic))return {classification:'stop',reasons:['topic_not_requested']};return {classification:'declared_candidate',reasons:['owner_declared_only']};
 }
-function permission(rows,topic){const result=rows.map(r=>({...r,topic,...classify(r,topic)}));return {job:'permission',topic,rows:result,summary:count(result),limits:'本人が記入した記入した状態の分類です。実際の同意・法令・配信可否を認定せず、送信しません。停止・未確認は候補に加えません。'};}
+function permission(rows,topic){const result=rows.map(r=>({...r,topic,...classify(r,topic)}));return {job:'permission',topic,rows:result,summary:count(result),limits:'本人が記入した状態の分類です。実際の同意・法令・配信可否を認定せず、送信しません。停止・未確認は候補に加えません。'};}
 function count(rows){return {declared_candidate:rows.filter(r=>r.classification==='declared_candidate').length,stop:rows.filter(r=>r.classification==='stop').length,unknown:rows.filter(r=>r.classification==='unknown').length};}
 function migration(before,after,topic){let a=new Map(before.map(r=>[r.alias,r])),b=new Map(after.map(r=>[r.alias,r]));const rows=[...new Set([...a.keys(),...b.keys()])].sort().map(alias=>{let old=a.get(alias),next=b.get(alias),flags=[],classification='stop';
  if(!old)flags.push('added_alias_review');if(!next)flags.push('missing_after');
