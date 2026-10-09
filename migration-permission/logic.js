@@ -6,8 +6,8 @@ function parseCSV(text){if(typeof text!=='string'||new TextEncoder().encode(text
  if(quoted)fail('CSVの引用符が閉じていません。');if(cell!==''||row.length||closed){row.push(cell);rows.push(row);}if(!rows.length)fail('CSVを入力してください。');return rows;
 }
 function records(text,batch=false){let rows=parseCSV(text),head=batch?BATCH:HEADER;if(JSON.stringify(rows[0])!==JSON.stringify(head))fail('指定の列名・順序を使用してください：'+head.join(','));if(rows.length<2||rows.length>MAX_ROWS+1)fail('1〜500データ行を使ってください。');const keys=new Set(),aliases=new Map();
- return rows.slice(1).map((cells,i)=>{const line=i+2;if(cells.length!==head.length)fail(line+'行目：列数が違います。');let r=Object.fromEntries(head.map((h,j)=>[h,cells[j].trim()]));if(!id(r.alias,'p'))fail(line+'行目：架空IDはp001形式（3〜5桁）です。');for(const k of ['permission','withdrawn'])if(!['yes','no','unknown'].includes(r[k]))fail(line+'行目：'+k+'はyes/no/unknownです。');if(!['story','notes','story|notes','none','unknown'].includes(r.topics))fail(line+'行目：topicsが不正です。');let key=r.alias;
- if(batch){if(!id(r.campaign,'c')||!id(r.batch,'b')||!['story','notes'].includes(r.topic))fail(line+'行目：campaign/batch/topicが不正です。');key=[r.campaign,r.batch,r.alias,r.topic].join(':');const signature=[r.permission,r.withdrawn,r.topics].join(':');if(aliases.has(r.alias)&&aliases.get(r.alias)!==signature)fail(line+'行目：同じ架空IDの状態が一致しません。');aliases.set(r.alias,signature);}
+ return rows.slice(1).map((cells,i)=>{const line=i+2;if(cells.length!==head.length)fail(line+'行目：列数が違います。');let r=Object.fromEntries(head.map((h,j)=>[h,cells[j].trim()]));if(!id(r.alias,'p'))fail(line+'行目：仮IDはp001形式（3〜5桁）です。');for(const k of ['permission','withdrawn'])if(!['yes','no','unknown'].includes(r[k]))fail(line+'行目：'+k+'はyes/no/unknownです。');if(!['story','notes','story|notes','none','unknown'].includes(r.topics))fail(line+'行目：topicsが不正です。');let key=r.alias;
+ if(batch){if(!id(r.campaign,'c')||!id(r.batch,'b')||!['story','notes'].includes(r.topic))fail(line+'行目：campaign/batch/topicが不正です。');key=[r.campaign,r.batch,r.alias,r.topic].join(':');const signature=[r.permission,r.withdrawn,r.topics].join(':');if(aliases.has(r.alias)&&aliases.get(r.alias)!==signature)fail(line+'行目：同じ仮IDの状態が一致しません。');aliases.set(r.alias,signature);}
  if(keys.has(key))fail(line+'行目：重複行・IDがあります。');keys.add(key);return r;});
 }
 function classify(r,topic){if(!['story','notes'].includes(topic))fail('確認する話題を選んでください。');let reasons=[];
@@ -15,7 +15,7 @@ function classify(r,topic){if(!['story','notes'].includes(topic))fail('確認す
  if(r.permission==='unknown')reasons.push('permission_unknown');if(r.withdrawn==='unknown')reasons.push('withdrawn_unknown');if(r.topics==='unknown')reasons.push('topics_unknown');if(reasons.length)return {classification:'unknown',reasons};
  if(!r.topics.split('|').includes(topic))return {classification:'stop',reasons:['topic_not_requested']};return {classification:'declared_candidate',reasons:['owner_declared_only']};
 }
-function permission(rows,topic){const result=rows.map(r=>({...r,topic,...classify(r,topic)}));return {job:'permission',topic,rows:result,summary:count(result),limits:'本人が記入した架空状態の分類です。実際の同意・法令・配信可否を認定せず、送信しません。停止・未確認は候補に加えません。'};}
+function permission(rows,topic){const result=rows.map(r=>({...r,topic,...classify(r,topic)}));return {job:'permission',topic,rows:result,summary:count(result),limits:'本人が記入した記入した状態の分類です。実際の同意・法令・配信可否を認定せず、送信しません。停止・未確認は候補に加えません。'};}
 function count(rows){return {declared_candidate:rows.filter(r=>r.classification==='declared_candidate').length,stop:rows.filter(r=>r.classification==='stop').length,unknown:rows.filter(r=>r.classification==='unknown').length};}
 function migration(before,after,topic){let a=new Map(before.map(r=>[r.alias,r])),b=new Map(after.map(r=>[r.alias,r]));const rows=[...new Set([...a.keys(),...b.keys()])].sort().map(alias=>{let old=a.get(alias),next=b.get(alias),flags=[],classification='stop';
  if(!old)flags.push('added_alias_review');if(!next)flags.push('missing_after');
@@ -30,6 +30,6 @@ function batches(input){let grouped=new Map(),rows=input.map(r=>({...r,...classi
 }
 function csv(report){const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';if(report.job==='migration'){const header=['alias','before_permission','after_permission','before_withdrawn','after_withdrawn','before_topics','after_topics','classification','flags'];return [header.join(','),...report.rows.map(r=>[r.alias,r.before?.permission||'missing_record',r.after?.permission||'missing_record',r.before?.withdrawn||'missing_record',r.after?.withdrawn||'missing_record',r.before?.topics||'missing_record',r.after?.topics||'missing_record',r.classification,r.flags.join('|')].map(q).join(','))].join('\r\n');}
  const header=report.job==='batches'?['campaign','batch','alias','topic','classification','reasons','overlap']:['alias','topic','classification','reasons'];return [header.join(','),...report.rows.map(r=>header.map(k=>q(Array.isArray(r[k])?r[k].join('|'):r[k])).join(','))].join('\r\n');}
-function txt(report){return '架空IDの確認結果 / '+report.job+'\n'+report.limits+'\n\n'+JSON.stringify(report.summary,null,2)+'\n\n'+csv(report);}
+function txt(report){return '仮IDの確認結果 / '+report.job+'\n'+report.limits+'\n\n'+JSON.stringify(report.summary,null,2)+'\n\n'+csv(report);}
 const api={parseCSV,records,classify,permission,migration,batches,csv,txt,MAX_BYTES};root.AliasChecks=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
