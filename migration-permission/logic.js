@@ -19,7 +19,7 @@ function permission(rows,topic){const result=rows.map(r=>({...r,topic,...classif
 function count(rows){return {declared_candidate:rows.filter(r=>r.classification==='declared_candidate').length,stop:rows.filter(r=>r.classification==='stop').length,unknown:rows.filter(r=>r.classification==='unknown').length};}
 function migration(before,after,topic){let a=new Map(before.map(r=>[r.alias,r])),b=new Map(after.map(r=>[r.alias,r]));const rows=[...new Set([...a.keys(),...b.keys()])].sort().map(alias=>{let old=a.get(alias),next=b.get(alias),flags=[],classification='stop';
  if(!old)flags.push('added_alias_review');if(!next)flags.push('missing_after');
- if(old&&next){if(old.withdrawn==='yes'&&next.withdrawn!=='yes')flags.push('withdrawal_lost_hold');if(old.permission!==next.permission)flags.push('permission_changed_review');if(old.topics!==next.topics)flags.push('topics_changed_review');}
+ if(old&&next){if(old.withdrawn==='yes'&&next.withdrawn!=='yes')flags.push('withdrawal_lost_hold');if(old.withdrawn!==next.withdrawn)flags.push('withdrawn_changed_review');if(old.permission!==next.permission)flags.push('permission_changed_review');if(old.topics!==next.topics)flags.push('topics_changed_review');}
  if(next)classification=classify(next,topic).classification;if(old&&old.withdrawn==='yes')classification='stop';
  if(classification==='declared_candidate'&&flags.length)classification='unknown';return {alias,before:old||null,after:next||null,classification,flags,reasons:next?classify(next,topic).reasons:['missing_after']};});
  return {job:'migration',topic,rows,summary:count(rows),limits:'停止済みの旧状態を再開へ変換しません。追加・状態/話題変更は本人の再確認が必要です。実サービスの移行や配信は行いません。'};
