@@ -3,7 +3,8 @@
  'use strict';
  const $=id=>document.getElementById(id);let note='';
  function clear(){note='';$('brief-result').hidden=true;$('brief-download').disabled=true;$('brief-next').href='../contract-cost/';$('brief-error').textContent='';}
- $('brief-form').addEventListener('input',clear);$('brief-form').addEventListener('change',clear);
+ function inputChanged(event){if(['brief-contacts','brief-messages','brief-term','brief-monthly','brief-setup','brief-additional'].includes(event.target?.id))$('brief-cost-checked').checked=false;clear();}
+ $('brief-form').addEventListener('input',inputChanged);$('brief-form').addEventListener('change',inputChanged);
  $('brief-form').onsubmit=e=>{e.preventDefault();clear();try{
   const input=Object.fromEntries(['job','tried','goal','contacts','messages','term','monthly','setup','additional'].map(k=>[k,$('brief-'+k).value]));input.costChecked=$('brief-cost-checked').checked;
   const result=PhoneSupportBrief.build(input);note=result.note;$('brief-report').textContent=note;

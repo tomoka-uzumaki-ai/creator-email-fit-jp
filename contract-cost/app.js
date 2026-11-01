@@ -3,8 +3,9 @@ function saveText(name,text,type='text/plain;charset=utf-8'){const u=URL.createO
 let report='';
 function clearResult(){report='';$('result').hidden=true;$('buy').hidden=true;$('download').disabled=true;}
 const yen=value=>value===null?'未確認':value.toLocaleString('ja-JP')+'円';
-$('form').addEventListener('input',clearResult);
-$('form').addEventListener('change',clearResult);
+function inputChanged(event){if(['contacts','messages','term','setup','additional'].includes(event.target?.id))$('price-checked').checked=false;clearResult();}
+$('form').addEventListener('input',inputChanged);
+$('form').addEventListener('change',inputChanged);
 $('form').onsubmit=e=>{
   e.preventDefault();clearResult();
   try{
